@@ -11,8 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Safeguard: if the events table doesn't exist yet (fresh deploy), skip.
+        if (!Schema::hasTable('events')) {
+            return;
+        }
+
         Schema::table('events', function (Blueprint $table) {
-            $table->foreignId('fk_venue_event')->nullable()->constrained('venues', 'id');
+            // Only add the column/constraint if it's not already present
+            if (!Schema::hasColumn('events', 'fk_venue_event')) {
+                $table->foreignId('fk_venue_event')->nullable()->constrained('venues', 'id');
+            }
         });
     }
 
@@ -21,9 +29,15 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('events')) {
+            return;
+        }
+
         Schema::table('events', function (Blueprint $table) {
-            $table->dropForeign(['fk_venue_event']);
-            $table->dropColumn('fk_venue_event');
+            if (Schema::hasColumn('events', 'fk_venue_event')) {
+                $table->dropForeign(['fk_venue_event']);
+                $table->dropColumn('fk_venue_event');
+            }
         });
     }
 };
